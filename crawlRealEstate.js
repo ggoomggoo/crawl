@@ -5,7 +5,7 @@ const { sendTelegramMessage, sendTelegramMessageMinor } = require('./telegram');
 
 const timestamp = Date.now();
 let maxId = '0';
-const previousMaxId = '2327720507'; // manual
+const previousMaxId = '2327914042'; // manual
 
 const books = [
     'https://m.land.naver.com/map/37.5111:127.0851:14:1171010100/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&',
@@ -40,7 +40,7 @@ const books = [
 
   const result = [];
 
-  sendTelegramMessageAtAll(`${new Date(timestamp).toLocaleString()} start.`);
+  sendTelegramMessageAtAll(`${new Date(timestamp).toLocaleString()} start. previousMaxId=${previousMaxId}`);
 
   let i = 0;
   for (const book of books) {
@@ -172,8 +172,8 @@ async function saveBookInfo(browser, page, book) {
 
         // skip already id
         maxId = Math.max(Number(id), Number(maxId)).toString();
-        if (Number(id) < Number(previousMaxId)) {
-          console.log(`${id} skip. previousMaxId=${previousMaxId}`)
+        if (Number(id) <= Number(previousMaxId)) {
+          console.log(`${id} skip. previousMaxId=${previousMaxId}. merit_area=${merit_area}`)
           continue;
         }
 
@@ -218,9 +218,10 @@ async function saveBookInfo(browser, page, book) {
           const detail_cell_data = $detail_row_cell('.detail_cell_data').text()
           detail_row_cell_map[detail_cell_title] = detail_cell_data;
         }
-        const area = Number(splitArea(detail_row_cell_map['공급/전용면적'] || '00.00/00.00㎡(전용률 00%)'))
+        const area = Number(splitArea(detail_row_cell_map['공급/전용면적'] ||detail_row_cell_map['계약/전용면적'] || '00.00/00.00㎡(전용률 00%)'))
         const maintenance_cost = Number(removeNotDigit(detail_row_cell_map['관리비'] || '0.0'))
-        const floor = Number((detail_row_cell_map['해당층/총층'] || '0/0층')[0]) // TODO 저/6층
+        // const floor = Number((detail_row_cell_map['해당층/총층'] || '0/0층')[0]) // TODO 저/6층
+        const floorText = (detail_row_cell_map['해당층/총층'] || '0/0층') // TODO 저/6층
         const room_count = Number((detail_row_cell_map['방수/욕실수'] || '0/0개')[0]) // TODO 2/1개
 
         // detail_facilities
@@ -286,11 +287,11 @@ async function saveBookInfo(browser, page, book) {
         ) {
           message = '| yureka!!!'; // costByArea
           sendTelegramMessage(
-            [`📍 ${detail_location_info} 📍 ${room_count || '-'} 📍 ${pArea} | ${date}`, `💰 ${price} 💰 ${costByArea} 💰 ${detail_deal_price}`, `ℹ️ ${detail_general_summary}`, `${detail_agent_head_title}`, '', `${id}`, `🔗 https://m.land.naver.com/article/info/${id}?newMobile`, '', `🔗 https://map.naver.com/v5/search/${detail_location_info.split(' ').join('_')}`].join('\n')
+            [`📍 ${detail_location_info} 📍 ${room_count || '-'} 📍 ${pArea} 📍 ${floorText} | ${date}`, `💰 ${price} 💰 ${costByArea} 💰 ${detail_deal_price}`, `ℹ️ ${detail_general_summary}`, `${detail_agent_head_title}`, '', `${id}`, `🔗 https://m.land.naver.com/article/info/${id}?newMobile`, '', `🔗 https://map.naver.com/v5/search/${detail_location_info.split(' ').join('_')}`].join('\n')
           );
         } else {
           sendTelegramMessageMinor(
-            [`📍 ${detail_location_info} 📍 ${room_count || '-'} 📍 ${pArea} | ${date}`, `💰 ${price} 💰 ${costByArea} 💰 ${detail_deal_price}`, `ℹ️ ${detail_general_summary}`, `${detail_agent_head_title}`, '', `${id}`, `🔗 https://m.land.naver.com/article/info/${id}?newMobile`, '', `🔗 https://map.naver.com/v5/search/${detail_location_info.split(' ').join('_')}`].join('\n')
+            [`📍 ${detail_location_info} 📍 ${room_count || '-'} 📍 ${pArea} 📍 ${floorText} | ${date}`, `💰 ${price} 💰 ${costByArea} 💰 ${detail_deal_price}`, `ℹ️ ${detail_general_summary}`, `${detail_agent_head_title}`, '', `${id}`, `🔗 https://m.land.naver.com/article/info/${id}?newMobile`, '', `🔗 https://map.naver.com/v5/search/${detail_location_info.split(' ').join('_')}`].join('\n')
           );
         }
 

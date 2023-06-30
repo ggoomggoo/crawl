@@ -1,9 +1,11 @@
 // puppeteer을 가져온다.
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
+const { sendTelegramMessage, sendTelegramMessageMinor } = require('./telegram');
 
-
-const timestamp = Date.now()
+const timestamp = Date.now();
+let maxId = '0';
+const previousMaxId = '2327720507'; // manual
 
 const books = [
     'https://m.land.naver.com/map/37.5111:127.0851:14:1171010100/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&',
@@ -38,9 +40,16 @@ const books = [
 
   const result = [];
 
+  sendTelegramMessageAtAll(`${new Date(timestamp).toLocaleString()} start.`);
+
+  let i = 0;
   for (const book of books) {
+    i++;
+    sendTelegramMessageAtAll(`${new Date(timestamp).toLocaleString()} start. ${i}`);
     result.push(await saveBookInfo(browser, page, book));
   }
+
+  sendTelegramMessageAtAll(`${new Date(timestamp).toLocaleString()} finish. maxId=${maxId}`);
 
   page.close();
   
@@ -161,6 +170,13 @@ async function saveBookInfo(browser, page, book) {
         let t = itemInnerLink.split('/')
         const id = t[t.length - 1]
 
+        // skip already id
+        maxId = Math.max(Number(id), Number(maxId)).toString();
+        if (Number(id) < Number(previousMaxId)) {
+          console.log(`${id} skip. previousMaxId=${previousMaxId}`)
+          continue;
+        }
+
         await newPage.bringToFront()
 
         // 상세보기
@@ -247,15 +263,14 @@ async function saveBookInfo(browser, page, book) {
         }
 
         // skip date
-        if (date < "230629") {
-          newPage.close();
-          imagePage.close();
-
-          return {};
-        }
+        // if (date < "230629") {
+        //   newPage.close();
+        //   imagePage.close();
+        //   return {};
+        // }
 
         // alarm
-        const pArea = (area/3.30579);
+        const pArea = (area/3.30579).toFixed(0);
         const aa = (detail_deal_price_second + maintenance_cost) / (4/1000); // not 5/1000
         const price = (detail_deal_price_first + aa);
         const costByArea = (price / pArea).toFixed(0);
@@ -270,6 +285,13 @@ async function saveBookInfo(browser, page, book) {
           && (price < 30_000) // over 22_000
         ) {
           message = '| yureka!!!'; // costByArea
+          sendTelegramMessage(
+            [`📍 ${detail_location_info} 📍 ${room_count || '-'} 📍 ${pArea} | ${date}`, `💰 ${price} 💰 ${costByArea} 💰 ${detail_deal_price}`, `ℹ️ ${detail_general_summary}`, `${detail_agent_head_title}`, '', `${id}`, `🔗 https://m.land.naver.com/article/info/${id}?newMobile`, '', `🔗 https://map.naver.com/v5/search/${detail_location_info.split(' ').join('_')}`].join('\n')
+          );
+        } else {
+          sendTelegramMessageMinor(
+            [`📍 ${detail_location_info} 📍 ${room_count || '-'} 📍 ${pArea} | ${date}`, `💰 ${price} 💰 ${costByArea} 💰 ${detail_deal_price}`, `ℹ️ ${detail_general_summary}`, `${detail_agent_head_title}`, '', `${id}`, `🔗 https://m.land.naver.com/article/info/${id}?newMobile`, '', `🔗 https://map.naver.com/v5/search/${detail_location_info.split(' ').join('_')}`].join('\n')
+          );
         }
 
         console.log(`date=${date}, id=${id}, price=${price}, price_first=${detail_deal_price_first}, costByArea=${costByArea} ${message}`)
@@ -313,6 +335,11 @@ async function saveBookInfo(browser, page, book) {
     imagePage.close();
 
     return {};
+}
+
+function sendTelegramMessageAtAll(message) {
+  sendTelegramMessage(message);
+  sendTelegramMessageMinor(message)
 }
 
 

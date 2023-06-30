@@ -6,13 +6,17 @@ const { sendTelegramMessage, sendTelegramMessageMinor } = require('./telegram');
 const timestamp = Date.now();
 let maxId = '0';
 const previousMaxId = '2327914042'; // manual
+// const previousMaxId = '0'; // manual
 
-const books = [
-    'https://m.land.naver.com/map/37.5111:127.0851:14:1171010100/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&',
-    'https://m.land.naver.com/map/37.502717:127.092513:14:1171010600/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&',
-    'https://m.land.naver.com/map/37.503592:127.1037:14:1171010500/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&',
-    'https://m.land.naver.com/map/37.504983:127.11465:14:1171010400/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&',
-    'https://m.land.naver.com/map/37.51506:127.122999:14:1171011100/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&'
+const targets = [
+  { name: '잠실동', link: 'https://m.land.naver.com/map/37.5111:127.0851:14:1171010100/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&' },
+  { name: '삼전동', link: 'https://m.land.naver.com/map/37.502717:127.092513:14:1171010600/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&' },
+  { name: '석촌동', link: 'https://m.land.naver.com/map/37.503592:127.1037:14:1171010500/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&' },
+  { name: '송파동', link: 'https://m.land.naver.com/map/37.504983:127.11465:14:1171010400/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&' },
+  { name: '방이동', link: 'https://m.land.naver.com/map/37.51506:127.122999:14:1171011100/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&' },
+  // { name: '강동구청', link: 'https://m.land.naver.com/map/37.5305573:127.1207083:17/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&' },
+  // { name: '대방역', link: 'https://m.land.naver.com/map/37.5161184:126.9239924:17:/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&' },
+  // { name: '합정역', link: 'https://m.land.naver.com/map/37.5495506:126.914433:17:/VL:SGJT:OR/B1:B2?wprcMax=22000&rprcMax=50&' },
 ];
 
 // fs.createReadStream('books.csv')
@@ -43,10 +47,10 @@ const books = [
   sendTelegramMessageAtAll(`${new Date(timestamp).toLocaleString()} start. previousMaxId=${previousMaxId}`);
 
   let i = 0;
-  for (const book of books) {
+  for (const target of targets) {
     i++;
-    sendTelegramMessageAtAll(`${new Date(timestamp).toLocaleString()} start. ${i}`);
-    result.push(await saveBookInfo(browser, page, book));
+    sendTelegramMessageAtAll(`${new Date(timestamp).toLocaleString()} start. ${target.name}`);
+    result.push(await saveBookInfo(browser, page, target));
   }
 
   sendTelegramMessageAtAll(`${new Date(timestamp).toLocaleString()} finish. maxId=${maxId}`);
@@ -74,10 +78,10 @@ function delay(time) {
     });
  }
 
-async function saveBookInfo(browser, page, book) {
-    console.log(`book: ${book}`);
+async function saveBookInfo(browser, page, { link }) {
+    console.log(`link: ${link}`);
 
-    await page.goto(book);
+    await page.goto(link);
     await delay(1000);
 
     // 매물 목록 보기
